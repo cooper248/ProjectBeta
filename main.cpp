@@ -116,7 +116,7 @@ int decide(vector<vector<double>>* qValueGrid){
     
     double best = -500;
     int choice;
-    double explore = .01;
+    double explore = .001;
     
     for(int i =0;i<4;i++){
         //check up value
@@ -229,22 +229,18 @@ double react(int choice, vector<vector<double>>* qValueGrid){
     // update previous location grid table
     if (choice==1){
         qValueGrid->at(agentY-1)[agentX] = discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY-1)[agentX]);
-        //qValueGrid->at(agentY)[agentX] =discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY-1)[agentX]);
     }
     
     else if (choice==2){
         qValueGrid->at(agentY+1)[agentX] = discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY+1)[agentX]);
-        //qValueGrid->at(agentY)[agentX] =discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY+1)[agentX]);
     }
     
     else if (choice==3){
         qValueGrid->at(agentY)[agentX-1] = discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY)[agentX-1]);
-        // qValueGrid->at(agentY)[agentX] =discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY)[agentX-1]);
     }
     
     else if (choice==4){
         qValueGrid->at(agentY)[agentX+1] = discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY)[agentX+1]);
-        //qValueGrid->at(agentY)[agentX] =discount*(qValueGrid->at(agentY)[agentX]) + learner*(reward - qValueGrid->at(agentY)[agentX+1]);
     }
     if(reward==100){
         //move agent back to starting position if goal was found
