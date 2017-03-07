@@ -23,6 +23,7 @@ using namespace std;
 // Using global variables for all functions
 int gridWidth;
 int gridHeight;
+int cycles = 100;
 
 // moving agent location
 int agentX;
@@ -32,18 +33,16 @@ int agentY;
 int agentStartX;
 int agentStartY;
 
-
 int goalX;
 int goalY;
 
 
 #define crRand (double)rand()/RAND_MAX
 
-void createGrid(vector<vector<double>>* qValueGrid, vector<vector<char>>* visual){
+void createGrid(vector<vector<double>>* qValueGrid){
     
     srand(time(NULL));
     vector<double> qValueRows;
-    vector<char> visualRows;
     
     // Input length and width of gridworld from user while width or height greater than 1
     while (gridWidth <=1 && gridHeight <=1){
@@ -63,10 +62,8 @@ void createGrid(vector<vector<double>>* qValueGrid, vector<vector<char>>* visual
         for(int j=0;j<gridWidth;j++){
             
             qValueRows.push_back(crRand);
-            visualRows.push_back('-');
         }
         qValueGrid->push_back(qValueRows);
-        visual->push_back(visualRows);
         qValueRows.clear();
     }
     
@@ -92,12 +89,10 @@ void createGrid(vector<vector<double>>* qValueGrid, vector<vector<char>>* visual
         goalY = rand()% gridHeight;
         goalX= rand()% gridWidth;
     }
-    
-    visual->at(agentY)[agentX]='A';
-    visual->at(goalY)[goalX]='G';
+
 };
 
-void printGrid(vector<vector<double>>* pGrid){
+void printGrid(){
     cout<<"Note that the bottom left corner is location (0,0)"<<endl<<endl;
     
     for(int i=gridHeight-1;i>-1;i--){
@@ -118,11 +113,10 @@ void printGrid(vector<vector<double>>* pGrid){
 };
 
 int decide(vector<vector<double>>* qValueGrid){
-    //srand(time(NULL));
     
-    double best=-500;
+    double best = -500;
     int choice;
-    double explore= .005;
+    double explore = .01;
     
     for(int i =0;i<4;i++){
         //check up value
@@ -268,7 +262,8 @@ void testD(vector<vector<double>>* qValueGrid){
     for(int i=gridHeight-1;i>-1;i--){
         for(int j=0;j<gridWidth;j++){
             
-            if(highest<qValueGrid->at(j)[i]){
+            if(highest<qValueGrid->at(j)[i])
+            {
                 highest=qValueGrid->at(j)[i];
             }
         }
@@ -276,16 +271,15 @@ void testD(vector<vector<double>>* qValueGrid){
 
     cout<<"You're max q value is: "<<highest<<endl;
     assert(highest<maxReward);
+    cout<<"Congratulations, test D was a success! The highest Q value did not surpass 100."<<endl;
 };
 
-void runProgram(vector<vector<double>>* qValueGrid){
-    
-    vector<int> iter;
+void runProgramOnce(vector<vector<double>>* qValueGrid, vector<int>* iter){
     
     int choice=0;
     int iterations = 0;
-    int cycles = 10000;
     double reward = -1;
+    
     
     for(int i=0;i<cycles;i++)
     {
@@ -296,18 +290,72 @@ void runProgram(vector<vector<double>>* qValueGrid){
             reward = react(choice, qValueGrid);
             iterations+=1;
         }
-        iter.push_back(iterations);
+        iter->push_back(iterations);
         iterations = 0;
         reward = -1;
     }
-    for(int j = 0; j<cycles;j++){
-        cout<<iter.at(j)<<endl;
-    }
+
+    
+    
 };
 
-void printPath(vector<vector<double>>* qValueGrid,vector<vector<char>>* visual){
-    agentX=agentStartX;
-    agentY=agentStartY;
+void runProgramThirty(vector<vector<double>>* qValueGrid, vector<int>* iter, vector<vector<int>>* allIterations){
+    
+    int choice=0;
+    int iterations = 0;
+    double reward = -1;
+    vector<double> qValueRows;
+    
+    for(int j=0;j<30;j++){
+        
+        for(int i=0;i<cycles;i++)
+        {
+            while(reward==-1)
+            {
+                choice = decide(qValueGrid);
+                act(choice);
+                reward = react(choice, qValueGrid);
+                iterations+=1;
+            }
+            iter->push_back(iterations);
+            iterations = 0;
+            reward = -1;
+        }
+        allIterations->push_back(*iter);
+        iter->clear();
+        qValueGrid->clear();
+        
+        // reinitialize qtable while leaving goal and agent locations in the same location
+        for(int i=0;i<gridHeight;i++){
+            for(int j=0;j<gridWidth;j++){
+                
+                qValueRows.push_back(crRand);
+            }
+            qValueGrid->push_back(qValueRows);
+            qValueRows.clear();
+        }
+        
+    }
+    
+  ofstream iterationsFile;
+   iterationsFile.open("Iterations_Beta.txt");
+    for(int i=0;i<cycles;i++){
+        for(int j=0;j<30;j++){
+        iterationsFile << allIterations->at(j)[i] <<"\t";
+        }
+        iterationsFile<< "\n";
+      }
+  iterationsFile.close();
+    
+};
+
+void testE(vector<vector<double>>* qValueGrid){
+    int xTest;
+    int yTest;
+    
+    xTest = agentX;
+    yTest = agentY;
+    
     int reward=-1;
     
     while(reward==-1)
@@ -357,35 +405,48 @@ void printPath(vector<vector<double>>* qValueGrid,vector<vector<char>>* visual){
     }
         
         choice = decide(qValueGrid);
-        int x;
-        int y;
-        x=agentX;
-        y=agentY;
         act(choice);
-        visual->at(y)[x]='*';
         reward = react(choice, qValueGrid);
+        printGrid();
     }
+    agentX=agentStartX;
+    agentY=agentStartY;
+    printGrid();
     
-    for(int i=gridHeight-1;i>-1;i--){
-        for(int j=0;j<gridWidth;j++){
-            cout<<visual->at(j)[i]<<" ";
-            
-        }
-        cout<<endl;
+    assert(xTest==agentX && yTest==agentY);
+    cout<<"Congratulations, test E was a success!"<<endl;
+
+};
+
+void testF(vector<int>* iter){
+    double test;
+    for(int j = 0; j<cycles;j++){
+        cout<<iter->at(j)<< endl;
     }
+    test= iter->at(0)/iter->at(99);
+    assert(iter->at(0)> 5*iter->at(99));
+    cout<<"Congratulations, test F was a success! The final iteration value was reduced by "<<test<<" times its original random search value by using Q-learning."<<endl;
 
 };
 
 int main() {
     
     vector<vector<double>> qValueGrid;
-    vector<vector<char>> visual;
+    vector<int> iter;
+    vector<vector<int>> allIterations;
     
-    createGrid(&qValueGrid, &visual);
-    printGrid(&qValueGrid);
-    runProgram(&qValueGrid);
+    createGrid(&qValueGrid);
+    printGrid();
+    cout<<"Agent Start Location: ("<<agentX<<","<<agentY<<")"<<endl;
+    cout<<"Goal Start Location: ("<<goalX<<","<<goalY<<")"<<endl;
+    
+    runProgramOnce(&qValueGrid,&iter);
     testD(&qValueGrid);
-    printPath(&qValueGrid, &visual);
+    testE(&qValueGrid);
+    testF(&iter);
+    
+    runProgramThirty(&qValueGrid, &iter,&allIterations);
+    
     
     return 0;
 }
